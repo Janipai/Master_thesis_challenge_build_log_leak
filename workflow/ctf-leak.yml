@@ -1,0 +1,42 @@
+name: CTF - Build Log Leak (Masked vs Unmasked)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  leak-demo:
+    runs-on: ubuntu-latest
+
+    env:
+      SECRET_TOKEN: ${{ secrets.SECRET_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Simulate build
+        run: |
+          echo "=== Starting build ==="
+          echo "Simulating usage of secrets..."
+
+          echo ""
+          echo ">> Example 1: Proper use (masked)"
+          echo "Masked secret (from GitHub Secrets): $SECRET_TOKEN"
+
+          echo ""
+          echo ">> Example 2: Bad practice – extra debug using .env"
+          if [ -f .env ]; then
+            echo "Found .env file"
+
+            echo "Dumping debug info from .env (THIS IS THE BUG!)"
+            # GitHub doesn't know SECRET_TOKEN_FROM_FILE is a secret → no masking
+            echo "SECRET_TOKEN_FROM_FILE=$SECRET_TOKEN_FROM_FILE"
+          else
+            echo "No .env file found."
+          fi
+
+          echo ""
+          echo "Build failed. Check the log carefully..."
+          exit 1
