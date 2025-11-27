@@ -16,6 +16,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Debug .env file (print raw contents & hex)
+        run: |
+          echo "--- .env contents (raw, visible characters) ---"
+          # show file with visible characters; no errors if not present
+          if [ -f .env ]; then
+            cat -A .env || true
+          else
+            echo "No .env file found"
+          fi
+
+          echo "--- hexdump (.env) ---"
+          # hexdump or od; hexdump might not be installed on minimal runners, so fallback
+          if command -v hexdump >/dev/null 2>&1; then
+            hexdump -C .env || true
+          else
+            od -An -tx1 .env || true
+          fi
+
+          echo "--- source .env and print variable raw/escaped ---"
+          bash -lc 'set -a; source .env 2>/dev/null || true; set +a; echo "VAR_LEN=$(echo -n \"$SECRET_TOKEN_FROM_FILE\" | wc -c)"; printf "RAW_VAR=" ; printf "%s" "$SECRET_TOKEN_FROM_FILE" ; echo ; printf "HEX: "; echo -n "$SECRET_TOKEN_FROM_FILE" | od -An -tx1 -v;'
+
       - name: Simulate build
         run: |
           echo "=== Starting build ==="
