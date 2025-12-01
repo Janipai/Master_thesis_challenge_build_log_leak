@@ -1,14 +1,13 @@
 name: Simulate build
 
 on:
-  workflow_dispatch:  # så du kan starte det manuelt fra GitHub
+  workflow_dispatch:  
 
 jobs:
   leak-demo:
     runs-on: ubuntu-latest
 
     env:
-      # Secret hentes fra GitHub Actions secrets (se næste trin)
       SECRET_TOKEN: ${{ secrets.SECRET_TOKEN }}
 
     steps:
@@ -19,3 +18,6 @@ jobs:
         run: |
           echo "Ups, something when wrong in the build"
           echo "DEBUG: SECRET_TOKEN is: $SECRET_TOKEN"
+      - name: Encoded leak (bypass)
+        run: |
+          echo "DEBUG (base64): $(printf '%s' "$SECRET_TOKEN" | base64)"
