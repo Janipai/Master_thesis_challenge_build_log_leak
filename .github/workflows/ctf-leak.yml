@@ -1,63 +1,21 @@
-name: CTF - Build Log Leak (Masked vs Unmasked)
+name: Simulate build
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
+  workflow_dispatch:  # så du kan starte det manuelt fra GitHub
 
 jobs:
   leak-demo:
     runs-on: ubuntu-latest
 
     env:
+      # Secret hentes fra GitHub Actions secrets (se næste trin)
       SECRET_TOKEN: ${{ secrets.SECRET_TOKEN }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Start build
+        run: echo "Starter CI..."
 
-      - name: Debug .env file (print raw contents & hex)
+      - name: Vulnerable step that leak secret in log
         run: |
-          echo "--- .env contents (raw, visible characters) ---"
-          # show file with visible characters; no errors if not present
-          if [ -f .env ]; then
-            cat -A .env || true
-          else
-            echo "No .env file found"
-          fi
-
-          echo "--- hexdump (.env) ---"
-          # hexdump or od; hexdump might not be installed on minimal runners, so fallback
-          if command -v hexdump >/dev/null 2>&1; then
-            hexdump -C .env || true
-          else
-            od -An -tx1 .env || true
-          fi
-
-          echo "--- source .env and print variable raw/escaped ---"
-          bash -lc 'set -a; source .env 2>/dev/null || true; set +a; echo "VAR_LEN=$(echo -n \"$SECRET_TOKEN_FROM_FILE\" | wc -c)"; printf "RAW_VAR=" ; printf "%s" "$SECRET_TOKEN_FROM_FILE" ; echo ; printf "HEX: "; echo -n "$SECRET_TOKEN_FROM_FILE" | od -An -tx1 -v;'
-
-      - name: Simulate build
-        run: |
-          echo "=== Starting build ==="
-          echo "Simulating usage of secrets..."
-
-          echo ""
-          echo ">> Example 1: Proper use (masked)"
-          echo "Masked secret (from GitHub Secrets): $SECRET_TOKEN"
-
-          echo ""
-          echo ">> Example 2: Bad practice – extra debug using .env"
-          if [ -f .env ]; then
-            echo "Found .env file"
-
-            echo "Dumping debug info from .env (THIS IS THE BUG!)"
-            # GitHub doesn't know SECRET_TOKEN_FROM_FILE is a secret → no masking
-            echo "SECRET_TOKEN_FROM_FILE=$SECRET_TOKEN_FROM_FILE"
-          else
-            echo "No .env file found."
-          fi
-
-          echo ""
-          echo "Build failed. Check the log carefully..."
-          exit 1
+          echo "Ups, something when wrong in the build"
+          echo "DEBUG: SECRET_TOKEN is: $SECRET_TOKEN"
